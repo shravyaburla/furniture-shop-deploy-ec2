@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Node.js
@@ -18,33 +18,31 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install Dependencies
-      run: |
-        npm install
+    - name: Install dependencies
+      run: npm install
 
-    - name: Archive Application Files
-      run: |
-        zip -r app.zip .
+    - name: Archive application files
+      run: zip -r app.zip .
 
-    - name: Transfer Files to EC2
+    - name: Transfer files to EC2
       env:
-        EC2_HOST: \${{ secrets.EC2_HOST }}
-        EC2_USER: \${{ secrets.EC2_USER }}
-        EC2_KEY: \${{ secrets.EC2_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_KEY: ${{ secrets.EC2_KEY }}
       run: |
-        scp -i "\${{ env.EC2_KEY }}" app.zip \${{ env.EC2_USER }}@\${{ env.EC2_HOST }}:/home/\${{ env.EC2_USER }}
+        scp -i "$EC2_KEY" app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
 
     - name: Deploy on EC2
       env:
-        EC2_HOST: \${{ secrets.EC2_HOST }}
-        EC2_USER: \${{ secrets.EC2_USER }}
-        EC2_KEY: \${{ secrets.EC2_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_KEY: ${{ secrets.EC2_KEY }}
       run: |
-        ssh -i "\${{ env.EC2_KEY }}" \${{ env.EC2_USER }}@\${{ env.EC2_HOST }} << 'EOF'
-          sudo apt update
+        ssh -i "$EC2_KEY" $EC2_USER@$EC2_HOST << 'EOF'
+          sudo apt update -y
           sudo apt install -y unzip nodejs npm
-          unzip -o app.zip -d app
-          cd app
+          unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app
+          cd /home/$EC2_USER/app
           npm install
-          nohup node app.js > output.log 2>&1 &
+          nohup node app.js > app.log 2>&1 &
         EOF

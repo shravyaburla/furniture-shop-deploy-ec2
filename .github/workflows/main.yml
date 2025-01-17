@@ -1,0 +1,50 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: |
+        npm install
+
+    - name: Archive Application Files
+      run: |
+        zip -r app.zip .
+
+    - name: Transfer Files to EC2
+      env:
+        EC2_HOST: \${{ secrets.EC2_HOST }}
+        EC2_USER: \${{ secrets.EC2_USER }}
+        EC2_KEY: \${{ secrets.EC2_KEY }}
+      run: |
+        scp -i "\${{ env.EC2_KEY }}" app.zip \${{ env.EC2_USER }}@\${{ env.EC2_HOST }}:/home/\${{ env.EC2_USER }}
+
+    - name: Deploy on EC2
+      env:
+        EC2_HOST: \${{ secrets.EC2_HOST }}
+        EC2_USER: \${{ secrets.EC2_USER }}
+        EC2_KEY: \${{ secrets.EC2_KEY }}
+      run: |
+        ssh -i "\${{ env.EC2_KEY }}" \${{ env.EC2_USER }}@\${{ env.EC2_HOST }} << 'EOF'
+          sudo apt update
+          sudo apt install -y unzip nodejs npm
+          unzip -o app.zip -d app
+          cd app
+          npm install
+          nohup node app.js > output.log 2>&1 &
+        EOF

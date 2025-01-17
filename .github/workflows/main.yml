@@ -30,7 +30,9 @@ jobs:
         EC2_USER: ${{ secrets.EC2_USER }}
         EC2_KEY: ${{ secrets.EC2_KEY }}
       run: |
-        scp -i "$EC2_KEY" app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
+        echo "$EC2_KEY" > ec2_key.pem
+        chmod 600 ec2_key.pem
+        scp -i ec2_key.pem app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
 
     - name: Deploy on EC2
       env:
@@ -38,7 +40,9 @@ jobs:
         EC2_USER: ${{ secrets.EC2_USER }}
         EC2_KEY: ${{ secrets.EC2_KEY }}
       run: |
-        ssh -i "$EC2_KEY" $EC2_USER@$EC2_HOST << 'EOF'
+        echo "$EC2_KEY" > ec2_key.pem
+        chmod 600 ec2_key.pem
+        ssh -i ec2_key.pem $EC2_USER@$EC2_HOST << 'EOF'
           sudo apt update -y
           sudo apt install -y unzip nodejs npm
           unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app

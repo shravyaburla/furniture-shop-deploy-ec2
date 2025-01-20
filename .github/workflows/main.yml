@@ -65,11 +65,20 @@ jobs:
             sudo mkdir -p /var/www/furnitureshop
             sudo chown -R $USER:$USER /var/www/furnitureshop
 
-            # Unzip application and install dependencies
-            unzip ~/app.zip -d /var/www/furnitureshop
+            # Unzip application without prompt
+            unzip -o ~/app.zip -d /var/www/furnitureshop
+
+            # Change to the application directory
             cd /var/www/furnitureshop
+
+            # Install application dependencies
             npm install
 
-            # Start or restart the application with pm2
-            pm2 restart app || pm2 start app.js --name "furnitureshop"
+            # Start or restart the application using pm2
+            pm2 describe furnitureshop > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart furnitureshop
+            else
+              pm2 start app.js --name "furnitureshop"
+            fi
 

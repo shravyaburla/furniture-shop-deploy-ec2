@@ -24,6 +24,7 @@ jobs:
       - name: Package Application
         run: zip -r app.zip . -x ".git/*" "node_modules/*"
 
+
       - name: Prepare SSH Environment
         run: |
           mkdir -p ~/.ssh

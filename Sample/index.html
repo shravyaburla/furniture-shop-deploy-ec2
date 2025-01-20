@@ -8,32 +8,20 @@
 </head>
 <body>
   <header>
-    <h1>Furniture Shop</h1>
+    <h1>Welcome to the Furniture Shop</h1>
   </header>
   <main>
-    <div class="product" id="product-container">
-      <!-- Products will be dynamically loaded here -->
-    </div>
+    <ul id="furniture-list">
+      <li>Item 1: Modern Sofa</li>
+      <li>Item 2: Dining Table Set</li>
+      <li>Item 3: Wooden Bookshelf</li>
+    </ul>
   </main>
   <footer>
-    <p>&copy; 2025 Furniture Shop</p>
+    <p>&copy; 2025 Furniture Shop Inc.</p>
   </footer>
-  <script>
-    fetch('/api/products')
-      .then(response => response.json())
-      .then(products => {
-        const container = document.getElementById('product-container');
-        products.forEach(product => {
-          const productCard = document.createElement('div');
-          productCard.className = 'product-card';
-          productCard.innerHTML = `
-            <img src="${product.image}" alt="${product.name}">
-            <h2>${product.name}</h2>
-            <p>$${product.price}</p>
-          `;
-          container.appendChild(productCard);
-        });
-      });
-  </script>
 </body>
 </html>
+
+ 
+          

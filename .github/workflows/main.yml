@@ -10,43 +10,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install Dependencies
+        run: npm install
 
-    - name: Archive application files
-      run: zip -r app.zip .
+      - name: Package Application
+        run: zip -r app.zip . -x ".git/*" "node_modules/*"
 
-    - name: Transfer files to EC2
-  env:
-    EC2_HOST: ${{ secrets.EC2_HOST }}
-    EC2_USER: ${{ secrets.EC2_USER }}
-    EC2_KEY: ${{ secrets.EC2_KEY }}
-  run: |
-    echo "$EC2_KEY" > ec2_key.pem
-    chmod 600 ec2_key.pem
-    scp -o StrictHostKeyChecking=no -i ec2_key.pem app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
+      - name: Prepare SSH Environment
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-- name: Deploy on EC2
-  env:
-    EC2_HOST: ${{ secrets.EC2_HOST }}
-    EC2_USER: ${{ secrets.EC2_USER }}
-    EC2_KEY: ${{ secrets.EC2_KEY }}
-  run: |
-    echo "$EC2_KEY" > ec2_key.pem
-    chmod 600 ec2_key.pem
-    ssh -o StrictHostKeyChecking=no -i ec2_key.pem $EC2_USER@$EC2_HOST << 'EOF'
-      sudo apt update -y
-      sudo apt install -y unzip nodejs npm
-      unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app
-      cd /home/$EC2_USER/app
-      npm install
-      nohup node app.js > app.log 2>&1 &
-    EOF
+      - name: Write SSH Key
+        run: |
+          echo "${{ secrets.EC2_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Debug SSH Connection
+        run: |
+          ssh -vvv -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo Connection Successful"
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "app.zip"
+          target: "/home/ubuntu/"
+          debug: true
+
+      - name: Deploy Application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            # Update system and install dependencies
+            sudo apt-get update
+            sudo apt-get install -y nodejs npm unzip
+            sudo npm install -g pm2
+
+            # Ensure /var/www directory exists with correct permissions
+            sudo mkdir -p /var/www/furnitureshop
+            sudo chown -R $USER:$USER /var/www/furnitureshop
+
+            # Unzip application and install dependencies
+            unzip ~/app.zip -d /var/www/furnitureshop
+            cd /var/www/furnitureshop
+            npm install
+
+            # Start or restart the application with pm2
+            pm2 restart app || pm2 start app.js --name "furnitureshop"
+

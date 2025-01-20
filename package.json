@@ -1,13 +1,17 @@
 {
-  "name": "furniture-shop-ui",
+  "name": "furniture-shop-app",
   "version": "1.0.0",
-  "description": "A simple furniture shop UI with backend integration",
+  "description": "A simple Express app for the Furniture Shop serving static files",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
   },
-  "keywords": ["furniture", "shop", "UI", "nodejs"],
+  "keywords": [
+    "express",
+    "static",
+    "furniture",
+    "server"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
